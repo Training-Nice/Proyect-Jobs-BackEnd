@@ -1,0 +1,8 @@
+{
+"SpaProxyServer": {
+"ServerUrl": "",
+"LaunchCommand": "",
+"WorkingDirectory": "C:\\Users\\usermabatule\\Desktop\\Universidad\\Training Nice\\Proyecto Final\\Jobs-BackEnd\\Jobs-BackEnd\\Jobs-BackEnd",
+"MaxTimeoutInSeconds": "120"
+}
+}
