@@ -1,7 +1,6 @@
 ﻿using Jobs_BackEnd.BusinessLogicLayer;
 using Jobs_BackEnd.DataAccessLayer.Data.Repositories.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Primitives;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System.IdentityModel.Tokens.Jwt;
@@ -12,87 +11,36 @@ namespace Jobs_BackEnd.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UserController : ControllerBase
+    public class AuthController : Controller
     {
         private readonly IUserRepository _userRepository;
         public IConfiguration _configuration { get; set; }
 
-        public UserController(IUserRepository userRepository, IConfiguration configuration)
+
+        public AuthController(IUserRepository userRepository, IConfiguration configuration)
         {
             _userRepository = userRepository;
             _configuration = configuration;
         }
-        [HttpGet]
-        public async Task<IActionResult> GetAllUser()
-        {
-            try
-            {
-                return Ok(await _userRepository.GetUsers());
-            }
-            catch (Exception e)
-            {              
-                return BadRequest(e);
-            }
-
-        }
-        [HttpPost]
-        public async Task<dynamic> InsertUser([FromBody] Object opData)
-        {
-            try
-            {
-                var data = JsonConvert.DeserializeObject<dynamic>(opData.ToString());
-
-                string user = data.usuario.ToString();
-                string password = data.password.ToString();
-
-
-                var auth = await _userRepository.GetAthUser(user, password);
-                if (auth != null)
-                {
-                    return BadRequest(new
-                    {
-                        success = false,
-                        message = "Credenciales inconrrectas",
-                        result = ""
-                    });
-                }
-                var jwt = _configuration.GetSection("Jwt").Get<Jwt>();
-
-
-
-
-                return Ok(new
-                {
-                    success = true,
-                    message = "Ok",
-
-                });
-            }
-            catch (Exception e)
-            {
-                return BadRequest(e);
-            }
-        }
-
         [HttpPost]
         [Route("login")]
         public async Task<dynamic> Login([FromBody] Object opData)
         {
             var data = JsonConvert.DeserializeObject<dynamic>(opData.ToString());
-            
+
             string user = data.username.ToString();
             string password = data.password.ToString();
 
 
-             
+
             var auth = await _userRepository.GetAthUser(user, password);
-            if (auth==null)
+            if (auth == null)
             {
                 return BadRequest(new
                 {
                     ok = false,
                     message = "Credenciales inconrrectas"
-                    
+
                 });
             }
             var jwt = _configuration.GetSection("Jwt").Get<Jwt>();
@@ -118,13 +66,13 @@ namespace Jobs_BackEnd.Controllers
                     claims,
                     expires: DateTime.Now.AddMinutes(10),
                     signingCredentials: singIn
-                ) ;
+                );
             return Ok(new
             {
                 ok = true,
-                uid= auth.IdUser,
+                uid = auth.IdUser,
                 username = auth.Username,
-                rol= auth.Rol,
+                rol = auth.Rol,
                 nombre = auth.Nombre,
                 token = new JwtSecurityTokenHandler().WriteToken(token)
             });

@@ -35,6 +35,16 @@ namespace Jobs_BackEnd.DataAccessLayer.Data.Repositories
             db.Close();
             return aux;
         }
+        public async Task<UserModel> GetByUsername(string username)
+        {
+            var db = dbConnection();
+            var sql = @"SELECT * FROM users";
+            var query = await db.QueryAsync<UserModel>(sql, new { });
+            var aux = query.FirstOrDefault(e => e.Username == username);
+
+            db.Close();
+            return aux;
+        }
         public async Task<UserModel> GetUser(int id)
         {
             var db = dbConnection();
@@ -48,15 +58,16 @@ namespace Jobs_BackEnd.DataAccessLayer.Data.Repositories
         public async Task<bool> InsertUser(UserModel user)
         {
             var db = dbConnection();
-            var sql = @"INSERT INTO users(nombre, apellidoMaterno, apellidoPaterno, rol, username, email, password)
-                        VALUES(@nombre, @apellidoMaterno, @apellidoPaterno, @rol, @username, @email, @password)";
+            var sql = @"INSERT INTO users(nombre, apellidoMaterno, apellidoPaterno, rol, username, password)
+                        VALUES(@nombre, @apellidoMaterno, @apellidoPaterno, @rol, @username, @password)";
             var result =await db.ExecuteAsync(sql, new 
             {
                 nombre = user.Nombre,
-                apellidoMaterno = user.ApellidoMaterno,
-                apellidoPaterno = user.ApellidoPaterno,
-                rol= user.Rol,
                 username= user.Username,
+                apellidoPaterno = user.ApellidoPaterno,
+                apellidoMaterno = user.ApellidoMaterno,
+                password = user.Password,
+                rol= "trabajador"
             });
 
 
@@ -65,6 +76,7 @@ namespace Jobs_BackEnd.DataAccessLayer.Data.Repositories
             return result > 0;
             
         }
+       
         public async Task<bool> UpdateUser(int id, UserModel user)
         {
             var db = dbConnection();
@@ -100,7 +112,59 @@ namespace Jobs_BackEnd.DataAccessLayer.Data.Repositories
             return query > 0 ;
         }
 
-      
+        public async Task<IEnumerable<InformationCompleteDeuda>> getCopropietariosInfoDetailDuedas()
+        {
+            var db = dbConnection();
+            var sql = @"select td.idUser,td.idCopropietario,td.username ,td.nombre ,td.apellido_paterno,e.nombre as nombreEdif, c2.nombre as nombreCondominio,td.totalDeudas ,tde.totalDeudasExpensa
+                        from totaldeudasexpensasbyuser tde
+                        inner join totaldeudasbyuser td on (td.idUser = tde.idUser)
+                        inner join copropietario c on (c.idUser  = tde.idUser)
+                        inner join domicilio d on (d.idDomicilio = c.idDomicilio)
+                        inner join edificio e on (e.idEdificio = d.idEdificio)
+                        inner join condominio c2 on (c2.idCondominio = e.idCondominio)";
+            var query = await db.QueryAsync<InformationCompleteDeuda>(sql, new { });
+            db.Close();
+            return query;
+        }
 
+        public async Task<IEnumerable<InformationCompleteDeuda>> getCopropietariosInfoDetailDuedasByCondominio(int idCondominio)
+        {
+            var db = dbConnection();
+            var sql = @"select td.idUser,td.idCopropietario,td.username ,td.nombre ,td.apellido_paterno ,e.nombre as nombreEdif, c2.nombre as nombreCondominio,td.totalDeudas ,tde.totalDeudasExpensa,c2.nombre
+                                                    from totaldeudasexpensasbyuser tde
+                                                    inner join totaldeudasbyuser td on (td.idUser = tde.idUser)
+                                                    inner join copropietario c on (c.idCopropietario = td.idCopropietario)
+                                                    inner join domicilio d  on (d.idDomicilio  = c.idDomicilio)
+                                                    inner join edificio e on (e.idEdificio = d.idEdificio)
+                                                    inner join condominio c2 on (c2.idCondominio = e.idCondominio)
+                                                    where c2.idCondominio =@Id";
+
+            var query = await db.QueryAsync<InformationCompleteDeuda>(sql, new 
+            {
+                Id = idCondominio
+            });
+            db.Close();
+            return query;
+        }
+
+        public async Task<IEnumerable<CondominioModel>> getCondominios()
+        {
+            var db = dbConnection();
+            var sql = @"SELECT * FROM condominio";
+            var query = await db.QueryAsync<CondominioModel>(sql, new { });
+            db.Close();
+            return query;
+        }
+
+        public async Task<IEnumerable<UserExpensaModel>> getDeudasExpensaByUser(int idUser)
+        {
+            var db = dbConnection();
+            var sql = @"SELECT * 
+                        FROM administracionexpensas a
+                        where a.idUser =@Id";
+            var query = await db.QueryAsync<UserExpensaModel>(sql, new { Id=idUser});
+            db.Close();
+            return query;
+        }
     }
 }
